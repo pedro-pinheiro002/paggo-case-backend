@@ -9,7 +9,7 @@ export class UploadController {
   @Post('upload')
   async uploadFile(@Body() body: UploadBody) {
     const { name, contentType } = body;
-    const signedUrl = await this.uploadService.getSignedUrl(name, contentType);
-    return { signedUrl };
+    const response = await this.uploadService.getSignedUrl(name, contentType);
+    return response;
   }
 }
