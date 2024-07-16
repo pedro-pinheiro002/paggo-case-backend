@@ -3,12 +3,19 @@ import {
   TextractClient,
 } from '@aws-sdk/client-textract';
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class TextractService {
-  private readonly textractClient = new TextractClient();
+  private readonly textractClient = new TextractClient({
+    region: this.configService.get('AWS_REGION'),
+    credentials: {
+      accessKeyId: this.configService.get('AWS_ACCESS_KEY_ID'),
+      secretAccessKey: this.configService.get('AWS_SECRET_ACCESS_KEY'),
+    },
+  });
 
-  constructor() {}
+  constructor(private readonly configService: ConfigService) {}
 
   async analyzeDocument(objectKey: string) {
     const response = await this.textractClient.send(
