@@ -18,3 +18,11 @@ model User {
   name  String
   email String @unique
 }
+
+model File {
+  id          String   @id @default(uuid())
+  name        String
+  key         String
+  contentType String
+  createdAt   DateTime @default(now())
+}
