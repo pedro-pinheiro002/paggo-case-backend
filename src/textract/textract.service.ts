@@ -1,5 +1,7 @@
+import { PutObjectCommand } from '@aws-sdk/client-s3';
 import {
   AnalyzeExpenseCommand,
+  AnalyzeExpenseCommandOutput,
   TextractClient,
 } from '@aws-sdk/client-textract';
 import { Injectable } from '@nestjs/common';
@@ -20,8 +22,33 @@ export class TextractService extends S3Service {
     super(new ConfigService());
   }
 
+  private convertToTextToS3(extractedText: AnalyzeExpenseCommandOutput) {
+    let textToS3 = {
+      table: {},
+    };
+    textToS3.table['header'] =
+      extractedText.ExpenseDocuments[0].LineItemGroups[0].LineItems[0].LineItemExpenseFields.map(
+        (field) => {
+          if (field.Type.Text !== 'EXPENSE_ROW')
+            return field.LabelDetection.Text;
+        },
+      );
+
+    extractedText.ExpenseDocuments[0].LineItemGroups[0].LineItems.forEach(
+      (lineItem, index) => {
+        textToS3.table[`row${index}`] = lineItem.LineItemExpenseFields.map(
+          (field) => {
+            if (field.Type.Text !== 'EXPENSE_ROW')
+              return field.ValueDetection.Text;
+          },
+        );
+      },
+    );
+    return textToS3;
+  }
+  
   async analyzeDocument(objectKey: string) {
-    const response = await this.textractClient.send(
+    const extractedText = await this.textractClient.send(
       new AnalyzeExpenseCommand({
         Document: {
           S3Object: {
@@ -29,6 +56,16 @@ export class TextractService extends S3Service {
             Name: 'images/'.concat(objectKey),
           },
         },
+      }),
+    );
+
+    const extractedTextKey = objectKey.split('.')[0];
+    const response = await this.s3Client.send(
+      new PutObjectCommand({
+        Bucket: 'paggo-case-bucket',
+        Key: 'texts/'.concat(extractedTextKey),
+        Body: JSON.stringify(this.convertToTextToS3(extractedText)),
+        ContentType: 'application/json',
       }),
     );
 
