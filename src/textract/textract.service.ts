@@ -26,7 +26,7 @@ export class TextractService extends S3Service {
         Document: {
           S3Object: {
             Bucket: 'paggo-case-bucket',
-            Name: objectKey,
+            Name: 'images/'.concat(objectKey),
           },
         },
       }),

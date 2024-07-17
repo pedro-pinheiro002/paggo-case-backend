@@ -18,7 +18,7 @@ export class UploadService extends S3Service {
       this.s3Client,
       new PutObjectCommand({
         Bucket: 'paggo-case-bucket',
-        Key: fileKey,
+        Key: 'images/'.concat(fileKey),
         ContentType: contentType,
       }),
       { expiresIn: 600 },
