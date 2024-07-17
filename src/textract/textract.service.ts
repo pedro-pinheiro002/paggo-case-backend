@@ -4,9 +4,10 @@ import {
 } from '@aws-sdk/client-textract';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { S3Service } from 'src/database/s3.service';
 
 @Injectable()
-export class TextractService {
+export class TextractService extends S3Service {
   private readonly textractClient = new TextractClient({
     region: this.configService.get('AWS_REGION'),
     credentials: {
@@ -15,7 +16,9 @@ export class TextractService {
     },
   });
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor() {
+    super(new ConfigService());
+  }
 
   async analyzeDocument(objectKey: string) {
     const response = await this.textractClient.send(
