@@ -9,7 +9,7 @@ import { ConfigService } from '@nestjs/config';
 import { S3Service } from 'src/database/s3.service';
 
 @Injectable()
-export class TextractService extends S3Service {
+export class TextractService {
   private readonly textractClient = new TextractClient({
     region: this.configService.get('AWS_REGION'),
     credentials: {
@@ -18,9 +18,7 @@ export class TextractService extends S3Service {
     },
   });
 
-  constructor() {
-    super(new ConfigService());
-  }
+  constructor(private readonly s3Service: S3Service, private readonly configService: ConfigService) {}
 
   private convertToTextToS3(extractedText: AnalyzeExpenseCommandOutput) {
     let textToS3 = {
@@ -46,7 +44,7 @@ export class TextractService extends S3Service {
     );
     return textToS3;
   }
-  
+
   async analyzeDocument(objectKey: string) {
     const extractedText = await this.textractClient.send(
       new AnalyzeExpenseCommand({
@@ -60,7 +58,7 @@ export class TextractService extends S3Service {
     );
 
     const extractedTextKey = objectKey.split('.')[0];
-    const response = await this.s3Client.send(
+    const response = await this.s3Service.s3Client.send(
       new PutObjectCommand({
         Bucket: 'paggo-case-bucket',
         Key: 'texts/'.concat(extractedTextKey),

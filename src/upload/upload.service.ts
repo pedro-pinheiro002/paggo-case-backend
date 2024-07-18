@@ -7,15 +7,16 @@ import { PrismaService } from 'src/database/prisma.service';
 import { S3Service } from 'src/database/s3.service';
 
 @Injectable()
-export class UploadService extends S3Service {
-  constructor(private readonly prisma: PrismaService) {
-    super(new ConfigService());
-  }
+export class UploadService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly s3Service: S3Service,
+  ) {}
 
   async getSignedUrl(fileName: string, contentType: string) {
     const fileKey = randomUUID().concat('-').concat(fileName);
     const signedUrl = await getSignedUrl(
-      this.s3Client,
+      this.s3Service.s3Client,
       new PutObjectCommand({
         Bucket: 'paggo-case-bucket',
         Key: 'images/'.concat(fileKey),
