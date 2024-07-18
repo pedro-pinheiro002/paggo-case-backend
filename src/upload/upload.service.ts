@@ -33,6 +33,6 @@ export class UploadService {
       },
     });
 
-    return { signedUrl, key: fileKey };
+    return { signedUrl, key: fileKey , name: fileName};
   }
 }
