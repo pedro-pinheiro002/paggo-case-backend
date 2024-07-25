@@ -13,7 +13,7 @@ export class UploadService {
     private readonly s3Service: S3Service,
   ) {}
 
-  async getSignedUrl(fileName: string, contentType: string) {
+  async getSignedUrl(fileName: string, contentType: string, userId: string) {
     const fileKey = randomUUID().concat('-').concat(fileName);
     const signedUrl = await getSignedUrl(
       this.s3Service.s3Client,
@@ -27,12 +27,13 @@ export class UploadService {
 
     await this.prisma.file.create({
       data: {
+        userId,
         key: fileKey,
         name: fileName,
         contentType,
       },
     });
 
-    return { signedUrl, key: fileKey , name: fileName};
+    return { signedUrl, key: fileKey, name: fileName };
   }
 }
