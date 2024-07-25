@@ -6,6 +6,7 @@ import {
 } from '@aws-sdk/client-textract';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { PrismaService } from 'src/database/prisma.service';
 import { S3Service } from 'src/database/s3.service';
 
 @Injectable()
@@ -18,7 +19,11 @@ export class TextractService {
     },
   });
 
-  constructor(private readonly s3Service: S3Service, private readonly configService: ConfigService) {}
+  constructor(
+    private readonly s3Service: S3Service,
+    private readonly configService: ConfigService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   private convertToTextToS3(extractedText: AnalyzeExpenseCommandOutput) {
     let textToS3 = {
@@ -45,7 +50,7 @@ export class TextractService {
     return textToS3;
   }
 
-  async analyzeDocument(objectKey: string) {
+  async analyzeDocument(objectKey: string, userId: string) {
     const extractedText = await this.textractClient.send(
       new AnalyzeExpenseCommand({
         Document: {
@@ -67,6 +72,13 @@ export class TextractService {
       }),
     );
 
+    await this.prisma.textExtracted.create({
+      data: {
+        userId,
+        key: extractedTextKey,
+      },
+    })
+    
     return response;
   }
 }
