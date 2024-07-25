@@ -23,12 +23,13 @@ export class AuthService {
     const { id_token } = tokens;
     const userData: User = jwtDecode(id_token);
     let user = await this.prisma.user.findUnique({
-      where: { email: userData.email },
+      where: { id: userData.sub, email: userData.email },
     });
 
     if (!user) {
       user = await this.prisma.user.create({
         data: {
+          id: userData.sub,
           name: userData.given_name,
           familyName: userData.family_name,
           profilePicture: userData.picture,

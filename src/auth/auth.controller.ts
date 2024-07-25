@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Res } from '@nestjs/common';
+import { Body, Controller, Post } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { GetTokensBody } from 'src/dtos/get-tokens-body.dto';
 import { GetRefreshedTokensBody } from 'src/dtos/get-refreshed-tokens-body.dto';
@@ -8,9 +8,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('google')
-  async getTokens(
-    @Body() body: GetTokensBody,
-  ) {
+  async getTokens(@Body() body: GetTokensBody) {
     const { code } = body;
     const response = await this.authService.getTokens(code);
     return response;
