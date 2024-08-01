@@ -1,5 +1,7 @@
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import {
+  AnalyzeDocumentCommand,
+  AnalyzeDocumentCommandOutput,
   AnalyzeExpenseCommand,
   AnalyzeExpenseCommandOutput,
   TextractClient,
@@ -25,40 +27,53 @@ export class TextractService {
     private readonly prisma: PrismaService,
   ) {}
 
-  private convertToTextToS3(extractedText: AnalyzeExpenseCommandOutput) {
-    let textToS3 = {
-      table: {},
-    };
-    textToS3.table['header'] =
-      extractedText.ExpenseDocuments[0].LineItemGroups[0].LineItems[0].LineItemExpenseFields.map(
-        (field) => {
-          if (field.Type.Text !== 'EXPENSE_ROW')
-            return field.LabelDetection.Text;
-        },
-      );
+  private convertToTextToS3(extractedText: AnalyzeDocumentCommandOutput) {
+    // let textToS3 = {
+    //   table: {},
+    // };
+    // textToS3.table['header'] =
+    //   extractedText.ExpenseDocuments[0].LineItemGroups[0].LineItems[0].LineItemExpenseFields.map(
+    //     (field) => {
+    //       if (field.Type.Text !== 'EXPENSE_ROW')
+    //         return field.LabelDetection.Text;
+    //     },
+    //   );
 
-    extractedText.ExpenseDocuments[0].LineItemGroups[0].LineItems.forEach(
-      (lineItem, index) => {
-        textToS3.table[`row${index}`] = lineItem.LineItemExpenseFields.map(
-          (field) => {
-            if (field.Type.Text !== 'EXPENSE_ROW')
-              return field.ValueDetection.Text;
-          },
-        );
-      },
+    // extractedText.ExpenseDocuments[0].LineItemGroups[0].LineItems.forEach(
+    //   (lineItem, index) => {
+    //     textToS3.table[`row${index}`] = lineItem.LineItemExpenseFields.map(
+    //       (field) => {
+    //         if (field.Type.Text !== 'EXPENSE_ROW')
+    //           return field.ValueDetection.Text;
+    //       },
+    //     );
+    //   },
+    // );
+    // return textToS3;
+
+    const extractedTextLines = extractedText.Blocks.filter(
+      (block) => block.BlockType == 'LINE',
     );
+    const textToS3 = extractedText.Blocks.filter(
+      (block) => block.BlockType == 'LAYOUT_TEXT',
+    ).map((block) => {
+      return block.Relationships[0].Ids.map((id) =>
+        extractedTextLines.find((block) => block.Id === id).Text.trim(),
+      ).join(' ');
+    });
     return textToS3;
   }
 
   async analyzeDocument(objectKey: string, userId: string) {
     const extractedText = await this.textractClient.send(
-      new AnalyzeExpenseCommand({
+      new AnalyzeDocumentCommand({
         Document: {
           S3Object: {
             Bucket: 'paggo-case-bucket',
             Name: 'images/'.concat(objectKey),
           },
         },
+        FeatureTypes: ['LAYOUT'],
       }),
     );
 
@@ -77,8 +92,8 @@ export class TextractService {
         userId,
         key: extractedTextKey,
       },
-    })
-    
+    });
+
     return response;
   }
 }
